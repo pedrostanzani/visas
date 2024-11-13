@@ -6,6 +6,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background-color: #09090B;
   color: #fafafa;
+  height: 100vh;
 }
 
 @layer utilities {
@@ -18,4 +19,33 @@ body {
   :root {
     --radius: 0.5rem;
   }
+}
+
+.fantano {
+  position: relative;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  100% {
+    transform: rotate(-10deg);
+  }
+}
+
+.fantano svg {
+  animation-name: spin;
+  animation-duration: 2s; /* Adjust the duration as needed */
+  animation-iteration-count: infinite; /* Make the animation repeat */
+  animation-timing-function: linear; /* Control the timing of the animation */
+  transform-origin: center center; /* Set the rotation origin to the center */
+}
+
+::selection {
+  background-color: #0c59df;
+  color: #fefefe;
 }

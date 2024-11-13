@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { countries } from "@/static/countries";
+import React, { useState } from "react";
+import {
+  countries,
+  getVisaRequirementType,
+  VisaRequirementType,
+} from "@/static/constants";
 import { CircleFlag } from "react-circle-flags";
 import {
   Select,
@@ -12,21 +16,92 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import visaData from "@/static/visa-requirements.json";
+import { useVisaRequirements, visaRequirementsEnum } from "@/static/countries";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { ArrowLeftRight } from "lucide-react";
+
+const formatVisaRequirement = (visaRequirement: string) => {
+  if (visaRequirement === "evisa") {
+    return "e-Visa";
+  }
+  return visaRequirement;
+}
+
+const generateDetails = (
+  citizenshipCountry: string,
+  destinationCountry: string,
+  visaRequirement: string,
+  visaRequirementType: VisaRequirementType
+) => {
+  if (visaRequirementType === "FREEDOM_OF_MOVEMENT") {
+    return `Citizens from ${citizenshipCountry} can freely visit ${destinationCountry}.`;
+  }
+
+  if (visaRequirementType === "VISA_NOT_REQUIRED") {
+    return `Citizens from ${citizenshipCountry} do not require a visa to visit ${destinationCountry}.`;
+  }
+
+  if (visaRequirementType === "VISA_REQUIRED") {
+    return `Citizens from ${citizenshipCountry} require a visa to visit ${destinationCountry}.`;
+  }
+
+  if (visaRequirementType === "VISA_ON_ARRIVAL") {
+    return `Citizens from ${citizenshipCountry} require a visa on arrival to visit ${destinationCountry}.`;
+  }
+
+  if (visaRequirementType === "EVISA") {
+    return `Citizens from ${citizenshipCountry} require an e-Visa to visit ${destinationCountry}.`;
+  }
+
+  return `The visa requirement status for citizens of ${citizenshipCountry} to visit ${destinationCountry} is: ${visaRequirement}.`;
+};
+
+const generateColor = (visaRequirementType: VisaRequirementType) => {
+  if (visaRequirementType === "FREEDOM_OF_MOVEMENT") return `bg-green-600`;
+  if (visaRequirementType === "VISA_NOT_REQUIRED") return `bg-green-600`;
+  if (visaRequirementType === "VISA_REQUIRED") return `bg-red-600`;
+  if (visaRequirementType === "EVISA") return `bg-amber-400`;
+  if (visaRequirementType === "VISA_ON_ARRIVAL") return `bg-amber-400`;
+  return `bg-neutral-600`;
+};
 
 const VisaScreener = () => {
-  const [citizenship, setCitizenship] = useState<string | undefined>("undefined");
+  const [citizenship, setCitizenship] = useState<string | undefined>("br");
   const [destination, setDestination] = useState<string | undefined>(undefined);
 
-  const targetVisaRecord = visaData.filter(record => record.country_of_citizenship === citizenship && record.country_of_destination === destination)[0];
+  const citizenshipCountryName = countries.find(
+    (c) => c.id === citizenship
+  )?.name;
+  const destinationCountryName = countries.find(
+    (c) => c.id === destination
+  )?.name;
 
-  useEffect(() => {
-    setCitizenship("br");
-  }, [])
+  const { getVisaRequirement } = useVisaRequirements();
+  const visaRequirementId =
+    citizenship && destination
+      ? getVisaRequirement(citizenship, destination)
+      : null;
+
+  const visaRequirement =
+    visaRequirementId && visaRequirementId < visaRequirementsEnum.length
+      ? visaRequirementsEnum[visaRequirementId]
+      : null;
+      
+  const visaRequirementType = visaRequirement
+    ? getVisaRequirementType(visaRequirement)
+    : null;
+
+  const handleSwap = () => {
+    const prevCitizenship = citizenship;
+    setCitizenship(destination);
+    setDestination(prevCitizenship);
+  };
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
         <div className="w-full">
           <p className="text-sm text-neutral-600 pb-2 tracking-tighter font-bold uppercase">
             Country of citizenship
@@ -79,8 +154,32 @@ const VisaScreener = () => {
             </SelectContent>
           </Select>
         </div>
+        <div className="hidden sm:block self-end">
+          <Button onClick={handleSwap} variant="outline">
+            <ArrowLeftRight />
+          </Button>
+        </div>
       </div>
-      { targetVisaRecord !== undefined && <div className="mt-6">{targetVisaRecord.visa_requirement}</div>}
+      {visaRequirement && (
+        <div className="mt-6">
+          <Card className="flex gap-3 overflow-hidden">
+            <div className={cn("w-3", generateColor(visaRequirementType))} />
+            <div className="py-4 pr-4">
+              <h2 className="text-lg font-black pb-0.5 tracking-tighter uppercase">
+                {formatVisaRequirement(visaRequirement)}
+              </h2>
+              <p className="text-neutral-500 text-sm">
+                {generateDetails(
+                  citizenshipCountryName!,
+                  destinationCountryName!,
+                  visaRequirement,
+                  visaRequirementType
+                )}
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
