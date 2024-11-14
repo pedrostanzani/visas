@@ -6,7 +6,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background-color: #09090B;
   color: #fafafa;
-  height: 100vh;
+  height: 100dvh;
 }
 
 @layer utilities {
