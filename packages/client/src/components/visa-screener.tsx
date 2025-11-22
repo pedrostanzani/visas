@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
-  countries,
   getVisaRequirementType,
   VisaRequirementType,
 } from "@/static/constants";
+import { countries } from "@visas/shared";
 import { CircleFlag } from "react-circle-flags";
 import {
   Select,
@@ -25,14 +26,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ArrowLeftRight, Shuffle } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Globe,
+  Shuffle,
+  SquareArrowOutUpRight,
+} from "lucide-react";
 
 const formatVisaRequirement = (visaRequirement: string) => {
   if (visaRequirement === "evisa") {
     return "e-Visa";
   }
   return visaRequirement;
-}
+};
 
 const generateDetails = (
   citizenshipCountry: string,
@@ -73,8 +79,8 @@ const generateColor = (visaRequirementType: VisaRequirementType) => {
 };
 
 const VisaScreener = () => {
-  const [citizenship, setCitizenship] = useState<string | undefined>("br");
-  const [destination, setDestination] = useState<string | undefined>(undefined);
+  const [citizenship, setCitizenship] = useState<string | undefined>("us");
+  const [destination, setDestination] = useState<string | undefined>("ar");
 
   const citizenshipCountryName = countries.find(
     (c) => c.id === citizenship
@@ -83,15 +89,41 @@ const VisaScreener = () => {
     (c) => c.id === destination
   )?.name;
 
+  const citizenshipCountry = citizenship
+    ? countries.find((c) => c.id === citizenship)
+    : null;
+
   const { getVisaRequirement } = useVisaRequirements();
   const visaRequirement =
     citizenship && destination
       ? getVisaRequirement(citizenship, destination)
       : null;
-      
+
   const visaRequirementType = visaRequirement
     ? getVisaRequirementType(visaRequirement)
     : null;
+
+  // Count visa-free countries (VISA_NOT_REQUIRED and FREEDOM_OF_MOVEMENT) for citizenship country
+  const visaFreeCount = useMemo(() => {
+    if (!citizenship) return 0;
+    let count = 0;
+    countries.forEach((country) => {
+      if (country.id === citizenship) return;
+      const requirement = getVisaRequirement(citizenship, country.id);
+      if (requirement) {
+        const type = getVisaRequirementType(requirement);
+        if (type === "VISA_NOT_REQUIRED" || type === "FREEDOM_OF_MOVEMENT") {
+          count++;
+        }
+      }
+    });
+    return count;
+  }, [citizenship, getVisaRequirement]);
+
+  // Round down to nearest multiple of 10
+  const roundedVisaFreeCount = useMemo(() => {
+    return Math.floor(visaFreeCount / 10) * 10;
+  }, [visaFreeCount]);
 
   const handleSwap = () => {
     const prevCitizenship = citizenship;
@@ -119,17 +151,19 @@ const VisaScreener = () => {
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Coudntry of Citizenship</SelectLabel>
-                {countries.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
-                    <div className="flex gap-1.5 items-center">
-                      <CircleFlag
-                        countryCode={country.id}
-                        className="h-6 w-6"
-                      />
-                      <span>{country.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {[...countries]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      <div className="flex gap-1.5 items-center">
+                        <CircleFlag
+                          countryCode={country.id}
+                          className="h-6 w-6"
+                        />
+                        <span>{country.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -145,17 +179,19 @@ const VisaScreener = () => {
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Country of Destination</SelectLabel>
-                {countries.map((country) => (
-                  <SelectItem key={country.id} value={country.id}>
-                    <div className="flex gap-1.5 items-center">
-                      <CircleFlag
-                        countryCode={country.id}
-                        className="h-6 w-6"
-                      />
-                      <span>{country.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {[...countries]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      <div className="flex gap-1.5 items-center">
+                        <CircleFlag
+                          countryCode={country.id}
+                          className="h-6 w-6"
+                        />
+                        <span>{country.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -184,14 +220,14 @@ const VisaScreener = () => {
         </div>
       </div>
       {visaRequirement && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-4">
           <Card className="flex gap-3 overflow-hidden">
             <div className={cn("w-3", generateColor(visaRequirementType))} />
             <div className="py-4 pr-4">
-              <h2 className="text-lg font-black pb-0.5 tracking-tighter uppercase">
+              <h2 className="text-xl font-black pb-0.5 tracking-tighter uppercase">
                 {formatVisaRequirement(visaRequirement)}
               </h2>
-              <p className="text-neutral-500 text-sm">
+              <p className="text-neutral-500">
                 {generateDetails(
                   citizenshipCountryName!,
                   destinationCountryName!,
@@ -201,6 +237,38 @@ const VisaScreener = () => {
               </p>
             </div>
           </Card>
+          {citizenshipCountry && (
+            <Card className="p-4 flex flex-col gap-2 overflow-hidden">
+              <div className="uppercase flex items-center gap-2 tracking-tighter font-semibold text-base">
+                <CircleFlag
+                  countryCode={citizenshipCountry.id}
+                  className="h-5 w-5 flex-shrink-0 self-start mt-[2px]"
+                />
+                <h3>VISA REQUIREMENTS FOR {citizenshipCountryName} CITIZENS</h3>
+              </div>
+              <div className="flex items-center mt-0.5 mb-2">
+                <p className="text-neutral-500">
+                  Citizens from {citizenshipCountryName} have visa-free access
+                  to
+                  {roundedVisaFreeCount >= 10 ? (
+                    <> over {roundedVisaFreeCount} countries.</>
+                  ) : visaFreeCount > 0 ? (
+                    <> multiple countries.</>
+                  ) : (
+                    <> countries.</>
+                  )}{" "}
+                  <br className="hidden md:block" />
+                  Check out the full list of countries below.
+                </p>
+              </div>
+              <Button className="self-start" variant="outline" asChild>
+                <Link href={`/${citizenshipCountry.slug}`}>
+                  <Globe />
+                  View all
+                </Link>
+              </Button>
+            </Card>
+          )}
         </div>
       )}
     </div>
