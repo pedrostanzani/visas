@@ -3,5 +3,8 @@
   "private": true,
   "workspaces": ["packages/*"],
   "module": "index.ts",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "client:dev": "bun --filter client dev"
+  }
 }
