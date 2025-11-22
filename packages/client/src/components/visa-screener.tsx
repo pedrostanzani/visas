@@ -20,7 +20,12 @@ import { useVisaRequirements } from "@/static/countries";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { ArrowLeftRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ArrowLeftRight, Shuffle } from "lucide-react";
 
 const formatVisaRequirement = (visaRequirement: string) => {
   if (visaRequirement === "evisa") {
@@ -94,6 +99,12 @@ const VisaScreener = () => {
     setDestination(prevCitizenship);
   };
 
+  const handleShuffle = () => {
+    const shuffled = [...countries].sort(() => Math.random() - 0.5);
+    setCitizenship(shuffled[0].id);
+    setDestination(shuffled[1].id);
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
@@ -149,10 +160,27 @@ const VisaScreener = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="hidden sm:block self-end">
-          <Button onClick={handleSwap} variant="outline">
-            <ArrowLeftRight />
-          </Button>
+        <div className="hidden sm:flex flex-row self-end flex gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleSwap} variant="outline">
+                <ArrowLeftRight />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Swap</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleShuffle} variant="outline">
+                <Shuffle />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Shuffle</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
       {visaRequirement && (
