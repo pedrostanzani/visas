@@ -150,7 +150,7 @@ const VisaScreener = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>Coudntry of Citizenship</SelectLabel>
+                <SelectLabel>Country of Citizenship</SelectLabel>
                 {[...countries]
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((country) => (
